@@ -41,6 +41,7 @@ namespace JGame
         protected Controller.State _state = State.EndTurn;
         public Controller.State state { get { return _state; } }
 
+        // Pre caching state method
         protected Dictionary<State, MethodInfo> beginStateList = new Dictionary<State, MethodInfo>();
         protected Dictionary<State, MethodInfo> updateStateList = new Dictionary<State, MethodInfo>();
         protected Dictionary<State, MethodInfo> endStateList = new Dictionary<State, MethodInfo>();
