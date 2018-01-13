@@ -257,11 +257,19 @@ public static class SVN_Tools
     [MenuItem("Assets/SVN/Commit", false, (int)eSVNMenu.Commit)]
     static void Menu_Commit()
     {
+        AssetDatabase.SaveAssets();
         string Cmd = MakeCommand("commit", GetPaths(GetSelectPaths(true)));
         ExecuteSVNCommand(Cmd);
     }
 
     // Add
+    [MenuItem("Assets/SVN/Add", true)]
+    static bool Menu_Checker_Add()
+    {
+        // @. @
+        return true;
+    }
+
     [MenuItem("Assets/SVN/Add", false, (int)eSVNMenu.Add)]
     static void Menu_Add()
     {
@@ -290,6 +298,13 @@ public static class SVN_Tools
         ExecuteSVNCommand(Cmd);
     }
     // Lock
+    [MenuItem("Assets/SVN/Lock", true)]
+    static bool Menu_Checker_Lock()
+    {
+        // @. @
+        return true;
+    }
+
     [MenuItem("Assets/SVN/Lock", false, (int)eSVNMenu.Lock)]
     static void Menu_Lock()
     {
@@ -297,6 +312,13 @@ public static class SVN_Tools
         ExecuteSVNCommand(Cmd);
     }
     // Unlock
+    [MenuItem("Assets/SVN/Unlock", true)]
+    static bool Menu_Checker_Unlock()
+    {
+        // @. @
+        return true;
+    }
+
     [MenuItem("Assets/SVN/Unlock", false, (int)eSVNMenu.Unlock)]
     static void Menu_Unlock()
     {
