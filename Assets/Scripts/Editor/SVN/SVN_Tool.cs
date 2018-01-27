@@ -1,8 +1,12 @@
 ﻿#if UNITY_EDITOR_WIN
+//@TODO WINDOW 외 다른 OS 테스트
+//      SVN 기능 -> SVN class
 using System;
 using System.IO;
 using System.Diagnostics;
 using System.Collections;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 using UnityEngine;
 using UnityEditor;
@@ -48,6 +52,33 @@ public static class SVN_Tools
         Line_03 = 150,
         Showlog,
         Repo_Browser,
+        Test,
+    }
+
+    public class SVNRevInfo
+    {
+        public string m_strFileName = string.Empty;
+        public Int64 curRev = 0;
+        public Int64 finRev = 0;
+        public bool bDiff = false;
+
+        public SVNRevInfo(string fileName)
+        {
+            m_strFileName = fileName;
+        }
+
+        public void ReadData(string line)
+        {
+            if (line.Contains("revision"))
+            {
+
+            }
+            //WCREV = int.Parse(streamrader.ReadLine());
+            //WCDATE = int.Parse(streamrader.ReadLine());
+            //WCRANGE = int.Parse(streamrader.ReadLine());
+            //WCURL = int.Parse(streamrader.ReadLine());
+            //WCNOW = int.Parse(streamrader.ReadLine());
+        }
     }
 
     #region properties
@@ -63,6 +94,7 @@ public static class SVN_Tools
 
     // log tag
     private const string CONST_SVN_LOG_TAG = "[SVN]";
+    private const string CONST_SVN_REV_INFO = "/../SVNRevInfo.local";
 
     // use svn ?
     static bool Enable_SVN = false;
@@ -72,6 +104,8 @@ public static class SVN_Tools
     static string m_strRepoPath = string.Empty;
     // workspace path
     static string m_strWorkPath = string.Empty;
+
+    static Dictionary<string, SVNRevInfo> m_listRevInfo = new Dictionary<string, SVNRevInfo>();
     #endregion // properties
 
     #region Editor Prefabs
@@ -197,10 +231,10 @@ public static class SVN_Tools
             DrawPath("Tortoise", ref m_strProcPath, GUILayout.Width(pathLabelWidth));
 
             // Repository
-            //DrawPath("Repository", ref m_strRepoPath, GUILayout.Width(pathLabelWidth));
+            DrawPath("Repository", ref m_strRepoPath, GUILayout.Width(pathLabelWidth));
 
             // Workspace
-            //DrawPath("Workspace", ref m_strWorkPath, GUILayout.Width(pathLabelWidth));            
+            DrawPath("Workspace", ref m_strWorkPath, GUILayout.Width(pathLabelWidth));
         }
         //EditorGUI.EndDisabledGroup();
 
@@ -247,6 +281,12 @@ public static class SVN_Tools
 
     #region SVN_Menu
     // update
+    [MenuItem("Assets/SVN/Update", true)]
+    static bool Menu_Checker_Update()
+    {
+        if (Enable_SVN == false) return false;
+        return true;
+    }
     [MenuItem("Assets/SVN/Update", false, (int)eSVNMenu.Update)]
     static void Menu_Update()
     {
@@ -254,6 +294,12 @@ public static class SVN_Tools
         ExecuteSVNCommand(Cmd);
     }
     // Commit
+    [MenuItem("Assets/SVN/Commit", true)]
+    static bool Menu_Checker_Commit()
+    {
+        if (Enable_SVN == false) return false;
+        return true;
+    }
     [MenuItem("Assets/SVN/Commit", false, (int)eSVNMenu.Commit)]
     static void Menu_Commit()
     {
@@ -266,7 +312,7 @@ public static class SVN_Tools
     [MenuItem("Assets/SVN/Add", true)]
     static bool Menu_Checker_Add()
     {
-        // @. @
+        if (Enable_SVN == false) return false;
         return true;
     }
 
@@ -277,6 +323,12 @@ public static class SVN_Tools
         ExecuteSVNCommand(Cmd);
     }
     // Delete
+    [MenuItem("Assets/SVN/Delete", true)]
+    static bool Menu_Checker_Delete()
+    {
+        if (Enable_SVN == false) return false;
+        return true;
+    }
     [MenuItem("Assets/SVN/Delete", false, (int)eSVNMenu.Delete)]
     static void Menu_Delete()
     {
@@ -284,6 +336,12 @@ public static class SVN_Tools
         ExecuteSVNCommand(Cmd);
     }
     // Revert
+    [MenuItem("Assets/SVN/Revert", true)]
+    static bool Menu_Checker_Revert()
+    {
+        if (Enable_SVN == false) return false;
+        return true;
+    }
     [MenuItem("Assets/SVN/Revert", false, (int)eSVNMenu.Revert)]
     static void Menu_Revert()
     {
@@ -291,6 +349,13 @@ public static class SVN_Tools
         ExecuteSVNCommand(Cmd);
     }
     // Rename
+    [MenuItem("Assets/SVN/Rename", true)]
+    static bool Menu_Checker_Rename()
+    {
+        if (Enable_SVN == false) return false;
+        return true;
+    }
+
     [MenuItem("Assets/SVN/Rename", false, (int)eSVNMenu.Rename)]
     static void Menu_Rename()
     {
@@ -301,7 +366,7 @@ public static class SVN_Tools
     [MenuItem("Assets/SVN/Lock", true)]
     static bool Menu_Checker_Lock()
     {
-        // @. @
+        if (Enable_SVN == false) return false;
         return true;
     }
 
@@ -315,7 +380,7 @@ public static class SVN_Tools
     [MenuItem("Assets/SVN/Unlock", true)]
     static bool Menu_Checker_Unlock()
     {
-        // @. @
+        if (Enable_SVN == false) return false;
         return true;
     }
 
@@ -327,6 +392,13 @@ public static class SVN_Tools
     }
     // -------
     // Show log
+    [MenuItem("Assets/SVN/Show log", true)]
+    static bool Menu_Checker_Showlog()
+    {
+        if (Enable_SVN == false) return false;
+        return true;
+    }
+
     [MenuItem("Assets/SVN/Show log", false, (int)eSVNMenu.Showlog)]
     static void Menu_Showlog()
     {
@@ -334,6 +406,28 @@ public static class SVN_Tools
         ExecuteSVNCommand(Cmd);
     }
     // Repo-Browser
+    [MenuItem("Assets/SVN/Repo Browser", true)]
+    static bool Menu_Checker_RepBrowser()
+    {
+        if (Enable_SVN == false) return false;
+        return true;
+    }
+    [MenuItem("Assets/SVN/Repo Browser", false, (int)eSVNMenu.Repo_Browser)]
+    static void Menu_RepBrowser()
+    {
+        //string Cmd = MakeCommand("log", GetPaths(GetSelectPaths()));
+        //ExecuteSVNCommand(Cmd);
+    }
+    // Test
+    [MenuItem("Assets/SVN/Test", false, (int)eSVNMenu.Test)]
+    static void Menu_Test()
+    {
+        string[] _Paths = GetSelectPaths();
+        foreach (var _path in _Paths)
+        {
+            UpdateRevisionInfo(_path);
+        }
+    }
     #endregion
 
     #region SVN_Cmd
@@ -377,6 +471,7 @@ public static class SVN_Tools
 
         return Cmd;
     }
+
     static string MakeCommand(string Command, params string[] _params)
     {
         string Cmd = @"/c TortoiseProc.exe /command:" + Command;
@@ -390,6 +485,7 @@ public static class SVN_Tools
 
         return Cmd;
     }
+
     static void ExecuteSVNCommand(string SVNCommand)
     {
         if (!Enable_SVN)
@@ -427,6 +523,57 @@ public static class SVN_Tools
             //Catch Exception
             LogError(ex.Message);
         }
+    }
+
+    private static void UpdateRevisionInfo(string targetFile)
+    {
+        // create file for revision info
+        var localRevisionInfo = new FileInfo(Application.dataPath + CONST_SVN_REV_INFO);
+        if (localRevisionInfo.Exists)
+        {
+            localRevisionInfo.Delete();
+        }
+
+        // write revisioninfo format
+        using (StreamWriter filewriter = new StreamWriter(localRevisionInfo.FullName, false))
+        {
+            filewriter.WriteLine("$WCREV$");
+            filewriter.WriteLine("$WCDATE$");
+            filewriter.WriteLine("$WCRANGE$");
+            filewriter.WriteLine("$WCURL$");
+            filewriter.WriteLine("$WCNOW$");
+        }
+
+        // SubWCRev cmd
+        string arg = string.Format(" {0} {1} {1}", targetFile, localRevisionInfo.FullName);
+
+        // dododododo
+        System.Diagnostics.Process p = new System.Diagnostics.Process();
+        p.StartInfo.UseShellExecute = false;
+        p.StartInfo.FileName = "SubWCRev.exe";
+        p.StartInfo.CreateNoWindow = true;
+        p.StartInfo.RedirectStandardOutput = true;
+        p.StartInfo.Arguments = arg;
+        p.Start();
+
+        // read revision info 
+        SVNRevInfo revinfo = new SVNRevInfo(targetFile);
+
+        // read
+        while (!p.StandardOutput.EndOfStream)
+        {
+            string line = p.StandardOutput.ReadLine();
+            revinfo.ReadData(line);
+            UnityEngine.Debug.Log("line : " + line);
+        }
+
+        // add to caching list
+        if (!m_listRevInfo.ContainsKey(targetFile))
+        {
+            m_listRevInfo.Add(targetFile, null);
+        }
+
+        m_listRevInfo[targetFile] = revinfo;
     }
     #endregion //SVN_Cmd
 
