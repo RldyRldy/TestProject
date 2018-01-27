@@ -35,6 +35,16 @@ namespace GD
         protected int protectedTest = 0;
         private int privateTest = 0;
 
+        public GD_Test()
+        {
+
+        }
+
+        public GD_Test(int a, int b)
+        {
+
+        }
+
         private void privateFun()
         {
         }

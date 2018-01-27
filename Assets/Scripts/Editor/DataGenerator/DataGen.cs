@@ -41,9 +41,8 @@ namespace DataGenerator
         public string m_strFullName = string.Empty;
 
         protected Type m_pClassType = null;
-        protected List<FieldInfo> m_arrFieldInfo = new List<FieldInfo>();
-        protected List<PropertyInfo> m_arrPropertyInfo = new List<PropertyInfo>();
-        protected List<MethodInfo> m_arrMethodInfo = new List<MethodInfo>();        
+
+        protected Dictionary<MemberTypes, List<MemberInfo>> m_listMebmerInfo = new Dictionary<MemberTypes, List<MemberInfo>>();
 
         public bool Exists { get; set; }
 
@@ -84,49 +83,43 @@ namespace DataGenerator
         private void Load( Type _class )
         {
             var flags = (BindingFlags)Int32.MaxValue;// (BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static );
+            
+            var members = _class.GetMembers(flags);
 
-            var fields = _class.GetFields(flags);
-            var properties = _class.GetProperties(flags);
-            var methods = _class.GetMethods(flags);
+            var _memberTypes = (MemberTypes [])Enum.GetValues(typeof(MemberTypes));
 
-            foreach (var _field in fields)
+            m_listMebmerInfo.Clear();
+
+            foreach( var _type in _memberTypes )
             {
-                m_arrFieldInfo.Add(_field);
+                m_listMebmerInfo.Add(_type, new List<MemberInfo>());
             }
 
-            foreach ( var _property in properties)
+            foreach (var _member in members)
             {
-                m_arrPropertyInfo.Add(_property);
-            }
+                m_listMebmerInfo[MemberTypes.All].Add(_member);
 
-            foreach(var _method in methods )
-            {
-                m_arrMethodInfo.Add(_method);
+                foreach (var _type in _memberTypes)
+                {
+                    if(_type != MemberTypes.All && (_member.MemberType & _type) != 0 )
+                    {
+                        m_listMebmerInfo[_type].Add(_member);
+                    }
+                }
             }
         }
+
         #region OnGUI
         public void OnGUI_Data()
         {
             GUILayout.Label(m_strFullName + (Exists?" (Exists)":""), EditorStyles.boldLabel);
             GUILayout.Space(1.0f);
 
-            GUILayout.Label(m_arrPropertyInfo.Count.ToString());
-            foreach( var _prop in m_arrPropertyInfo )
+            GUILayout.Label(m_listMebmerInfo[MemberTypes.All].Count.ToString());
+            foreach (var _prop in m_listMebmerInfo[MemberTypes.All])
             {
-                GUILayout.Label(_prop.Name);
-            }
-
-            GUILayout.Label(m_arrFieldInfo.Count.ToString());
-            foreach (var _prop in m_arrFieldInfo)
-            {
-                GUILayout.Label(_prop.Name);
-            }
-
-            GUILayout.Label(m_arrMethodInfo.Count.ToString());
-            foreach (var _prop in m_arrMethodInfo)
-            {
-                GUILayout.Label(_prop.Name);
-            }            
+                GUILayout.Label(_prop.ToString());
+            }           
         }
         #endregion // OnGUI
     }
